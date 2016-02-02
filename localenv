@@ -1,0 +1,65 @@
+#!/bin/sh
+
+CURRENT=$(cd $(dirname $0) && pwd)
+PROJ=$(cd $(dirname $CURRENT) && pwd)
+
+case "$1" in
+    "build" )
+        CID=`docker ps | grep kamimado-hair-dev | awk '{print $1}'`
+        if [ "$CID" != "" ]; then
+            echo "Local env is running, stop it."
+            docker stop $CID
+        fi
+        docker build -t kamimado-hair-dev .
+    ;;
+    "up" )
+        CID=`docker ps | grep kamimado-hair-dev | awk '{print $1}'`
+        if [ "$CID" != "" ]; then
+            echo "Local env has already running."
+        else
+            docker run -d -m 2G -v $PROJ:/var/www/kamimado-hair -v $CURRENT/volume/mysql:/var/data/mysql -v $CURRENT/volume/logs:/var/log -p 9999:80 -p 3306:3306 kamimado-hair-dev
+        fi
+    ;;
+    "id" )
+        CID=`docker ps | grep kamimado-hair-dev | awk '{print $1}'`
+        if [ "$CID" = "" ]; then
+            echo "Local env is not running."
+        else
+            echo $CID
+        fi
+    ;;
+    "ssh" )
+        CID=`docker ps | grep kamimado-hair-dev | awk '{print $1}'`
+        if [ "$CID" = "" ]; then
+            echo "Local env is not running."
+        else
+            docker exec -it $CID bash
+        fi
+    ;;
+    "down" )
+        CID=`docker ps | grep kamimado-hair-dev | awk '{print $1}'`
+        if [ "$CID" = "" ]; then
+            echo "Local env is not running."
+        else
+            echo "Stopping container ${CID}..."
+            docker stop $CID
+        fi
+    ;;
+    "log" )
+        CID=`docker ps | grep kamimado-hair-dev | awk '{print $1}'`
+        if [ "$CID" = "" ]; then
+            echo "Local env is not running."
+        else
+            docker logs $CID
+        fi
+    ;;
+    * )
+        echo "Usage:"
+        echo "build - Build the container image"
+        echo "up    - run the local docker container"
+        echo "ssh   - bash login to running container"
+        echo "down  - stop the running docker container"
+        echo "log   - trace container logging"
+    ;;
+esac
+
